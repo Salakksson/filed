@@ -10,6 +10,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
+#include <ctype.h>
 
 #include "da.h"
 
@@ -54,16 +55,13 @@ static inline char control(char c)
 	return c & ~0x60;
 }
 
-void info(WINDOW* wind, const char* fmt, ...)
+void _info(WINDOW* wind, const char* fmt, va_list args)
 {
 	int y, x;
 	getyx(wind, y, x);
 
 	char buf[256];
-	va_list args;
-	va_start(args, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, args);
-	va_end(args);
 
 	attron(COLOR_PAIR(2));
 	mvprintw(LINES - 1, 0, "%s", buf);
@@ -73,6 +71,14 @@ void info(WINDOW* wind, const char* fmt, ...)
 	move(y, x);
 }
 
+void info(WINDOW* wind, const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	_info(wind, fmt, args);
+	va_end(args);
+}
+
 char confirm(WINDOW* wind, const char* fmt, ...)
 {
 	int y, x;
@@ -80,7 +86,7 @@ char confirm(WINDOW* wind, const char* fmt, ...)
 
 	va_list args;
 	va_start(args, fmt);
-	info(wind, fmt, args);
+	_info(wind, fmt, args);
 	va_end(args);
 
 	char c = getch();
@@ -306,7 +312,6 @@ WINDOW* init_window()
 	tcgetattr(STDIN_FILENO, &t);
 	t.c_lflag &= ~(ISIG);
 	tcsetattr(STDIN_FILENO, TCSANOW, &t);
-	atexit((void*)endwin);
 
 	return wind;
 }
@@ -324,8 +329,26 @@ void exec_file(WINDOW* wind, directory* cwd, const char* path)
 {
 	if (is_dir(path))
 		return change_dir(cwd, path);
-	info(wind, "todo: exec");
 
+	pid_t pid = fork();
+	if (pid == -1)
+	{
+		info(wind, "failed to fork: %s", strerror(errno));
+		return;
+	}
+	if (pid == 0)
+	{
+		execlp("xdg-open", "xdg-open", path, (char*)NULL);
+		info(wind, "failed to xdg-open '%s': %s", strerror(errno));
+		return;
+	}
+
+}
+
+void refresh_cwd(directory* cwd)
+{
+	clear();
+	change_dir(cwd, ".");
 }
 
 int main(int argc, char** argv)
@@ -371,13 +394,9 @@ int main(int argc, char** argv)
 		}
 		if (c == '\n')
 		{
-			char* dir = cwd.entries.items[cwd.current + cwd.scroll].name;
-			info(wind, "cding into %s", dir);
-			exec_file(wind, &cwd, dir);
-		}
-		if (c == 'm')
-		{
-			info(wind, "message");
+			char* entry = cwd.entries.items[cwd.current + cwd.scroll].name;
+			info(wind, "cding into %s", entry);
+			exec_file(wind, &cwd, entry);
 		}
 		if (c == control('v'))
 		{
@@ -387,6 +406,23 @@ int main(int argc, char** argv)
 		{
 			if (cwd.scroll > 0)
 				cwd.scroll--;
+		}
+		if (c == 'd')
+		{
+			char* entry = cwd.entries.items[cwd.current + cwd.scroll].name;
+			char input = confirm(wind, "delete '%s'? (y/N)", entry);
+			if (toupper(input) == 'Y')
+			{
+				if (remove(entry) == 0)
+					info(wind, "deleted '%s' successfully", entry);
+				else
+					info(wind, "failed to delete '%s'", entry);
+			}
+			refresh_cwd(&cwd);
+		}
+		if (c == 'g')
+		{
+			refresh_cwd(&cwd);
 		}
 		if (c == control('c')) exit(0);
 		draw_screen(wind, cwd);
