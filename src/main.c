@@ -33,6 +33,7 @@ typedef struct
 	char sz_unit;
 	char* date;
 	char* name;
+	char* link;
 } entry;
 
 typedef struct
@@ -45,6 +46,7 @@ typedef struct
 	int longest_date;
 	int y, x;
 	int current;
+	int scroll;
 } directory;
 
 static inline char control(char c)
@@ -52,7 +54,7 @@ static inline char control(char c)
 	return c & ~0x60;
 }
 
-char info(WINDOW* wind, const char* fmt, ...)
+void info(WINDOW* wind, const char* fmt, ...)
 {
 	int y, x;
 	getyx(wind, y, x);
@@ -69,6 +71,17 @@ char info(WINDOW* wind, const char* fmt, ...)
 	clrtoeol();
 	refresh();
 	move(y, x);
+}
+
+char confirm(WINDOW* wind, const char* fmt, ...)
+{
+	int y, x;
+	getyx(wind, y, x);
+
+	va_list args;
+	va_start(args, fmt);
+	info(wind, fmt, args);
+	va_end(args);
 
 	char c = getch();
 	move(LINES -1, 0);
@@ -127,7 +140,7 @@ void change_dir(directory* cwd, const char* path)
 	{
 		entry e = {0};
 		struct stat st = {0};
-		if (stat(dir_entry->d_name, &st) == -1)
+		if (lstat(dir_entry->d_name, &st) == -1)
 			fatal("failed to stat file");
 		e.n_links = st.st_nlink;
 		if (st.st_size < KILOBYTE)
@@ -183,8 +196,21 @@ void change_dir(directory* cwd, const char* path)
 		struct tm* mod_time = localtime(&st.st_mtime);
 		strftime(e.date, 20, "%b %d %H:%M", mod_time);
 
-		// TODO: check for errors in stat and getpwuid
 		e.name = strdup(dir_entry->d_name);
+
+		if (S_ISLNK(m))
+		{
+			char buf[PATH_MAX + 1];
+			ssize_t len = readlink(e.name, buf, PATH_MAX);
+			if (len == -1)
+				fatal("failed to readlink");
+			buf[len] = 0;
+			e.link = strdup(buf);
+		}
+		else e.link = 0;
+
+		// TODO: check for errors in stat and getpwuid
+
 		if (intlen(e.n_links) > cwd->longest_links)
 			cwd->longest_links = intlen(e.n_links);
 		if (strlen(e.owner) > cwd->longest_owner)
@@ -201,11 +227,19 @@ void change_dir(directory* cwd, const char* path)
 
 void draw_screen(WINDOW* wind, directory cwd)
 {
-	clear();
-	mvprintw(0, 0, "%s\n", cwd.path);
-	for (int i = 0; i < cwd.entries.len; i++)
+	mvprintw(0, 0, "%s", cwd.path);
+	clrtoeol();
+	printw("\n");
+
+	for (int i = 0; i < LINES - 2; i++)
 	{
-		entry e = cwd.entries.items[i];
+		clrtoeol();
+		if (i + cwd.scroll >= cwd.entries.len)
+		{
+			printw("\n");
+			continue;
+		}
+		entry e = cwd.entries.items[i + cwd.scroll];
 		printw("%s ", e.perms);
 		printw("%*d ", cwd.longest_links, e.n_links);
 		printw("%s ", e.owner);
@@ -227,23 +261,28 @@ void draw_screen(WINDOW* wind, directory cwd)
 		attron(COLOR_PAIR(1));
 		printw("%s", e.name);
 		attroff(COLOR_PAIR(1));
-
+		if (e.link)
+		{
+			attron(COLOR_PAIR(2));
+			printw(" -> %s", e.link);
+			attroff(COLOR_PAIR(2));
+		}
 		printw("\n");
 	}
 	refresh();
 	move(cwd.y, cwd.x);
 }
 
-int main(int argc, char** argv)
-{
-	config conf = {0};
-	conf.path = ".";
-	for (int i = 0; argv[i]; i++)
-	{
-		// TODO args
-		puts(argv[i]);
-	}
+static struct termios original_termios;
 
+void cleanup()
+{
+	tcsetattr(STDIN_FILENO, TCSANOW, &original_termios);
+	endwin();
+}
+
+WINDOW* init_window()
+{
 	WINDOW* wind = initscr();
 	start_color();
 	use_default_colors();
@@ -255,11 +294,50 @@ int main(int argc, char** argv)
 	init_pair(1, COLOR_CYAN, -1);
 	init_pair(2, COLOR_MAGENTA, -1);
 
+	static bool first_init = true;
+	if (first_init)
+	{
+		first_init = false;
+		tcgetattr(STDIN_FILENO, &original_termios);
+		atexit(cleanup);
+	}
+
 	struct termios t;
 	tcgetattr(STDIN_FILENO, &t);
 	t.c_lflag &= ~(ISIG);
 	tcsetattr(STDIN_FILENO, TCSANOW, &t);
 	atexit((void*)endwin);
+
+	return wind;
+}
+
+bool is_dir(const char* path)
+{
+	// TODO check for errors when stating
+	struct stat st;
+	stat(path, &st);
+
+	return S_ISDIR(st.st_mode);
+}
+
+void exec_file(WINDOW* wind, directory* cwd, const char* path)
+{
+	if (is_dir(path))
+		return change_dir(cwd, path);
+	info(wind, "todo: exec");
+
+}
+
+int main(int argc, char** argv)
+{
+	config conf = {0};
+	conf.path = ".";
+	for (int i = 1; argv[i]; i++)
+	{
+		conf.path = argv[i];
+	}
+
+	WINDOW* wind = init_window();
 
 	directory cwd = {0};
 	change_dir(&cwd, conf.path);
@@ -269,18 +347,46 @@ int main(int argc, char** argv)
 	{
 		if (c == 'p')
 		{
-			cwd.current--;
-			if (cwd.current < 0) cwd.current = cwd.entries.len - 1;
+			if (cwd.current + cwd.scroll <= 0)
+			{
+				info(wind, "todo: wrapping to bottom");
+			}
+			else if (cwd.current <= 0)
+			{
+				cwd.scroll--;
+			}
+			else cwd.current--;
 		}
 		if (c == 'n')
 		{
-			cwd.current = (cwd.current + 1) % cwd.entries.len;
+			if (cwd.current + cwd.scroll + 1 >= cwd.entries.len)
+			{
+				info(wind, "todo: wrapping to top");
+			}
+			else if (cwd.current + 1 >= LINES - 2)
+			{
+				cwd.scroll++;
+			}
+			else cwd.current++;
 		}
 		if (c == '\n')
 		{
-			char* dir = cwd.entries.items[cwd.current].name;
+			char* dir = cwd.entries.items[cwd.current + cwd.scroll].name;
 			info(wind, "cding into %s", dir);
-			change_dir(&cwd, dir);
+			exec_file(wind, &cwd, dir);
+		}
+		if (c == 'm')
+		{
+			info(wind, "message");
+		}
+		if (c == control('v'))
+		{
+			cwd.scroll++;
+		}
+		if (c == control('f'))
+		{
+			if (cwd.scroll > 0)
+				cwd.scroll--;
 		}
 		if (c == control('c')) exit(0);
 		draw_screen(wind, cwd);
