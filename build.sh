@@ -3,8 +3,8 @@
 set -e
 
 CC=gcc
-CCFLAGS=" -Wall -O0 -g"
-LDFLAGS=" -lcurses"
+CCFLAGS=" -Wall -Wpedantic -Werror -fsanitize=address,undefined -O0 -g"
+LDFLAGS=" -lcurses -fsanitize=address,undefined"
 
 BUILD_DIR=".build"
 BIN_DIR="$BUILD_DIR/bin"
@@ -13,6 +13,11 @@ DEPFILE="$BUILD_DIR/.deps"
 mkdir -p $BUILD_DIR
 mkdir -p $BIN_DIR
 touch $DEPFILE
+
+if [ $1 = 'fresh' ] ;
+then
+	rm -fr $BIN_DIR/*
+fi
 
 TARGET=./filed
 

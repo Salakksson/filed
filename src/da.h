@@ -7,7 +7,7 @@
 #include <string.h>
 #include <errno.h>
 
-#define fatal(str) do {endwin(); puts(str); _Exit(-1); } while (0)
+#define fatal(...) do {fprintf(stderr, __VA_ARGS__); exit(0); } while (0)
 
 #define DA(contents) struct { \
 	contents* items; \
@@ -32,12 +32,16 @@ do { \
 	if(!(list).items) fatal(strerror(errno)); \
 } while(0)
 
-#define da_swap(list, type, a, b)			\
+#define da_swap(list, type, a, b) \
 do { \
 	type tmp = (list).items[a]; \
 	(list).items[a] = (list).items[b]; \
 	(list).items[b] = tmp; \
 } while (0);
+
+#ifdef _WIN32
+#define strcasecmp stricmp
+#endif
 
 #define da_sort_entry(list) \
 do { \
@@ -45,7 +49,7 @@ do { \
 	{ \
 		for (int j = 0; j < (list).len - 1 - i; j++) \
 		{ \
-			if (strcmp((list).items[j].name, (list).items[j+1].name) > 0 ) \
+			if (strcasecmp((list).items[j].name, (list).items[j+1].name) > 0 ) \
 				da_swap(list, entry, j, j + 1); \
 		} \
 	} \
