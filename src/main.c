@@ -1,14 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <curses.h>
-#include <termios.h>
-#include <limits.h>
-#include <ctype.h>
-
 #include "da.h"
 #include "directory.h"
 #include "window.h"
+
+#include <unistd.h>
+#include <ctype.h>
 
 typedef struct
 {
