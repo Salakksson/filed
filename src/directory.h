@@ -11,6 +11,7 @@
 
 #define ECOLOR_MSG 5
 #define ECOLOR_HEAD 6
+#define ECOLOR_MARKED 7
 
 typedef struct
 {
@@ -24,6 +25,7 @@ typedef struct
 	char* name;
 	char* link;
 	int color;
+	bool marked;
 } entry;
 
 typedef struct

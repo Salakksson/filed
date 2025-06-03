@@ -62,6 +62,14 @@ void draw_screen(WINDOW* wind, directory cwd)
 			continue;
 		}
 		entry e = cwd.entries.items[i + cwd.scroll];
+
+		attron(COLOR_PAIR(ECOLOR_MARKED));
+		if (e.marked)
+			printw("- ");
+		else
+			printw("  ");
+		attroff(COLOR_PAIR(ECOLOR_MARKED));
+
 		printw("%s ", e.perms);
 		printw("%*d ", cwd.longest_links, e.n_links);
 		printw("%s ", e.owner);
@@ -120,6 +128,7 @@ WINDOW* init_window()
 
 	init_pair(ECOLOR_MSG, COLOR_YELLOW, -1);
 	init_pair(ECOLOR_HEAD, COLOR_YELLOW, -1);
+	init_pair(ECOLOR_MARKED, COLOR_YELLOW, -1);
 
 	static bool first_init = true;
 	if (first_init)

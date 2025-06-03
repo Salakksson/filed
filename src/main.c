@@ -41,6 +41,56 @@ void refresh_cwd(directory* cwd)
 	change_dir(cwd, ".");
 }
 
+void delete_entries(WINDOW* wind, directory* cwd, entry* selected)
+{
+	bool marked = false;
+	for (int i = 0; i < cwd->entries.len; i++)
+	{
+		if (!cwd->entries.items[i].marked) continue;
+		marked = true;
+		break;
+	}
+
+	char input;
+	if (marked)
+		input = confirm(wind, "delete marked files? (y/N)");
+	else
+		input = confirm(wind, "delete '%s'? (y/N)", selected->name);
+
+	if (toupper(input) != 'Y')
+		return;
+
+	if (marked)
+	{
+		bool success = true;
+		for (int i = 0; i < cwd->entries.len; i++)
+		{
+			entry e = cwd->entries.items[i];
+			if (!e.marked) continue;
+
+			if (remove(e.name) != 0)
+				success = false;
+			if (!success)
+			{
+				info(wind, "failed to delete '%s': %s", selected->name, strerror(errno));
+				break;
+			}
+
+		}
+		if (success)
+			info(wind, "deleted '%s' successfully", selected->name);
+	}
+	else
+	{
+		bool success = (remove(selected->name) == 0);
+		if (success)
+			info(wind, "deleted '%s' successfully", selected->name);
+		else
+			info(wind, "failed to delete '%s': %s", selected->name, strerror(errno));
+	}
+
+}
+
 int main(int argc, char** argv)
 {
 	config conf = {0};
@@ -58,7 +108,7 @@ int main(int argc, char** argv)
 	char c;
 	while ((c = getch()))
 	{
-		char* entry = cwd.entries.items[cwd.current + cwd.scroll].name;
+		entry* e = &cwd.entries.items[cwd.current + cwd.scroll];
 		switch (c)
 		{
 		case 'p':
@@ -84,8 +134,8 @@ int main(int argc, char** argv)
 			else cwd.current++;
 			break;
 		case '\n':
-			info(wind, "cding into %s", entry);
-			exec_file(wind, &cwd, entry);
+			info(wind, "cding into %s", e->name);
+			exec_file(wind, &cwd, e->name);
 			break;
 		case control('v'):
 			cwd.scroll++;
@@ -96,18 +146,15 @@ int main(int argc, char** argv)
 			break;
 		case 'd':
 		{
-			char input = confirm(wind, "delete '%s'? (y/N)", entry);
-			if (toupper(input) != 'Y')
-				break;
-			if (remove(entry) == 0)
-				info(wind, "deleted '%s' successfully", entry);
-			else
-				info(wind, "failed to delete '%s': %s", entry, strerror(errno));
+			delete_entries(wind, &cwd, e);
 			change_dir(&cwd, ".");
 			 break;
 		}
 		case 'g':
 			refresh_cwd(&cwd);
+			break;
+		case 'm':
+			e->marked = !e->marked;
 			break;
 		case control('c'):
 			goto leave;
