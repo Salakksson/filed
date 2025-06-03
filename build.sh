@@ -14,7 +14,7 @@ mkdir -p $BUILD_DIR
 mkdir -p $BIN_DIR
 touch $DEPFILE
 
-if [ $1 = 'fresh' ] ;
+if [ "$1" == "fresh" ] ;
 then
 	rm -fr $BIN_DIR/*
 fi
