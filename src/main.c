@@ -137,13 +137,6 @@ int main(int argc, char** argv)
 			info(wind, "cding into %s", e->name);
 			exec_file(wind, &cwd, e->name);
 			break;
-		case control('v'):
-			cwd.scroll++;
-			break;
-		case control('f'):
-			if (cwd.scroll > 0)
-				cwd.scroll--;
-			break;
 		case 'd':
 		{
 			delete_entries(wind, &cwd, e);
