@@ -169,6 +169,7 @@ char* expand_home(const char* path)
 {
 	if (path[0] != '~') return strdup(path);
 	const char* home = getenv("HOME");
+
 	// no extra null byte is needed as the tilde gets removed
 	char* fullpath = malloc(strlen(home) + strlen(path));
 	strcpy(fullpath, home);

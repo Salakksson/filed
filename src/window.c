@@ -62,14 +62,19 @@ char* nreadline(WINDOW* wind, const char* prompt)
 	while (true)
 	{
 		attron(COLOR_PAIR(ECOLOR_MSG));
-		mvprintw(LINES - 1, 0, "%s » %s", prompt, before.items);
+		mvprintw(LINES - 1, 0, "%s » ", prompt);
+		attroff(COLOR_PAIR(ECOLOR_MSG));
+
+		printw("%s", before.items);
+
 		int input_y, input_x;
 		getyx(wind, input_y, input_x);
+
 		printw("%s", after.items);
+
 		clrtoeol();
 		move(input_y, input_x);
-		attroff(COLOR_PAIR(ECOLOR_MSG));
-		/* info(wind, "%s » %s%s", prompt, before.items, after.items); */
+
 		int c = getch();
 		switch (c)
 		{
@@ -85,12 +90,11 @@ char* nreadline(WINDOW* wind, const char* prompt)
 			{
 				da_append(before, after.items[i]);
 			}
-			free(after.items);
 			sv temp = before;
 			before = after;
 			after = temp;
-			da_construct(before, 15);
-			da_append(before, '\0');
+			before.len = 1;
+			before.items[0] = '\0';
 			break;
 		}
 		case control('e'):
@@ -99,10 +103,9 @@ char* nreadline(WINDOW* wind, const char* prompt)
 			for (int i = 0; i < after.len; i++)
 			{
 				da_append(before, after.items[i]);
-			}
-			free(after.items);
-			da_construct(after, 15);
-			da_append(after, '\0');
+}
+			after.len = 1;
+			after.items[0] = '\0';
 			break;
 		}
 		case control('f'):
@@ -132,6 +135,18 @@ char* nreadline(WINDOW* wind, const char* prompt)
 			before.len--;
 			break;
 		}
+		case control('d'):
+			if (after.len <= 1) break;
+			for (int i = 1; i < after.len; i++)
+			{
+				after.items[i - 1] = after.items[i];
+			}
+			after.len--;
+			break;
+		case control('k'):
+			after.len = 1;
+			after.items[0] = '\0';
+			break;
 		case control('g'):
 		case control('c'):
 			free(before.items);
