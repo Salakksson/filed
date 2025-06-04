@@ -48,4 +48,8 @@ char* expand_home(const char* path);
 
 bool is_dir(const char* path);
 
+bool is_dir_empty(const char* path);
+
+bool remove_recursive(const char* path);
+
 #endif

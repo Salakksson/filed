@@ -67,7 +67,7 @@ void delete_entries(WINDOW* wind, directory* cwd, entry* selected)
 			entry e = cwd->entries.items[i];
 			if (!e.marked) continue;
 
-			if (remove(e.name) != 0)
+			if (!remove_recursive(e.name))
 				success = false;
 			if (!success)
 			{
@@ -81,7 +81,7 @@ void delete_entries(WINDOW* wind, directory* cwd, entry* selected)
 	}
 	else
 	{
-		bool success = (remove(selected->name) == 0);
+		bool success = remove_recursive(selected->name);
 		if (success)
 			info(wind, "deleted '%s' successfully", selected->name);
 		else

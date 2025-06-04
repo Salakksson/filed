@@ -181,6 +181,56 @@ char* expand_home(const char* path)
 bool is_dir(const char* path)
 {
 	struct stat st;
-	if (stat(path, &st) == -1) return false;
+	if (lstat(path, &st) == -1) return false;
 	return S_ISDIR(st.st_mode);
+}
+
+bool is_dir_empty(const char* path)
+{
+	DIR* dir = opendir(path);
+	if (!dir) return false;
+	struct dirent* entry;
+	while((entry = readdir(dir)))
+	{
+		if (!strcmp(entry->d_name, ".")) continue;
+		if (!strcmp(entry->d_name, "..")) continue;
+		closedir(dir);
+		return false;
+	}
+	closedir(dir);
+	return true;
+}
+
+bool remove_recursive(const char* path)
+{
+	fprintf(stderr, "attempting remove_recursive('%s')\n", path);
+	if (!is_dir(path)) return remove(path) == 0;
+
+	if (is_dir_empty(path)) return remove(path) == 0;
+
+	DIR* dir = opendir(path);
+	if (!dir) return false;
+	struct dirent* entry;
+
+	while((entry = readdir(dir)))
+	{
+		if (!strcmp(entry->d_name, ".")) continue;
+		if (!strcmp(entry->d_name, "..")) continue;
+
+		size_t path_len = snprintf(0, 0, "%s/%s", path, entry->d_name);
+		char* fullpath = malloc(path_len + 1);
+		snprintf(fullpath, path_len + 1, "%s/%s", path, entry->d_name);
+		bool success = remove_recursive(fullpath);
+		if (!success)
+		{
+			fprintf(stderr, "failed to remove '%s': %s\n", fullpath, strerror(errno));
+			fprintf(stderr, "entry->d_name : '%s'\n", entry->d_name);
+			closedir(dir);
+			free(fullpath);
+			return false;
+		}
+		free(fullpath);
+	}
+	closedir(dir);
+	return remove(path) == 0;
 }
