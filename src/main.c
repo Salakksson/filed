@@ -3,6 +3,7 @@
 #include "window.h"
 
 #include <unistd.h>
+#include <sys/stat.h>
 #include <ctype.h>
 
 typedef struct
@@ -106,6 +107,8 @@ int main(int argc, char** argv)
 	char c;
 	while ((c = getch()))
 	{
+		move(LINES - 1, 0);
+		clrtoeol();
 		entry* e = &cwd.entries.items[cwd.current + cwd.scroll];
 		switch (c)
 		{
@@ -132,15 +135,12 @@ int main(int argc, char** argv)
 			else cwd.current++;
 			break;
 		case '\n':
-			info(wind, "cding into %s", e->name);
 			exec_file(wind, &cwd, e->name);
 			break;
 		case 'd':
-		{
 			delete_entries(wind, &cwd, e);
 			change_dir(&cwd, ".");
-			 break;
-		}
+			break;
 		case 'g':
 			refresh_cwd(&cwd);
 			break;
@@ -161,6 +161,18 @@ int main(int argc, char** argv)
 			}
 			change_dir(&cwd, expanded);
 			free(expanded);
+			break;
+		}
+		case '+':
+		{
+			char* path = nreadline(wind, "create path");
+			if (!path) break;
+			if (mkdir(path, 0755) != 0)
+				info(wind, "failed to create '%s': %s", path, strerror(errno));
+			else
+				info(wind, "created directory '%s'", path);
+			free(path);
+			refresh_cwd(&cwd);
 			break;
 		}
 		case control('c'):
