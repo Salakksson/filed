@@ -10,8 +10,6 @@ typedef struct
 	char* path;
 } config;
 
-#define control(c) (c & ~0x60)
-
 void exec_file(WINDOW* wind, directory* cwd, const char* path)
 {
 	if (is_dir(path))
@@ -149,6 +147,22 @@ int main(int argc, char** argv)
 		case 'm':
 			e->marked = !e->marked;
 			break;
+		case 'o':
+		{
+			char* path = nreadline(wind, "open");
+			if (!path) break;
+			char* expanded = expand_home(path);
+			free(path);
+			if (!is_dir(expanded))
+			{
+				info(wind, "'%s' is not a valid path", expanded);
+				free(expanded);
+				break;
+			}
+			change_dir(&cwd, expanded);
+			free(expanded);
+			break;
+		}
 		case control('c'):
 			goto leave;
 		default:

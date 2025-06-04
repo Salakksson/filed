@@ -44,6 +44,8 @@ typedef struct
 
 void change_dir(directory* cwd, const char* path);
 
+char* expand_home(const char* path);
+
 bool is_dir(const char* path);
 
 #endif

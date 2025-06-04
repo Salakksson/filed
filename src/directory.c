@@ -165,11 +165,21 @@ void change_dir(directory* cwd, const char* path)
 	free((void*)path);
 }
 
+char* expand_home(const char* path)
+{
+	if (path[0] != '~') return strdup(path);
+	const char* home = getenv("HOME");
+	// no extra null byte is needed as the tilde gets removed
+	char* fullpath = malloc(strlen(home) + strlen(path));
+	strcpy(fullpath, home);
+	strcat(fullpath, path + 1);
+
+	return fullpath;
+}
+
 bool is_dir(const char* path)
 {
-	// TODO check for errors when stating
 	struct stat st;
-	stat(path, &st);
-
+	if (stat(path, &st) == -1) return false;
 	return S_ISDIR(st.st_mode);
 }

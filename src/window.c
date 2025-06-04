@@ -2,6 +2,7 @@
 
 #include <unistd.h>
 #include <termios.h>
+#include <locale.h>
 
 static void _info(WINDOW* wind, const char* fmt, va_list args)
 {
@@ -42,6 +43,116 @@ char confirm(WINDOW* wind, const char* fmt, ...)
 	clrtoeol();
 	move(y, x);
 	return c;
+}
+
+typedef DA(char) sv;
+
+char* nreadline(WINDOW* wind, const char* prompt)
+{
+	int y, x;
+	getyx(wind, y, x);
+
+	sv before;
+	sv after;
+	da_construct(before, 15);
+	da_construct(after, 15);
+	da_append(before, '\0');
+	da_append(after, '\0');
+
+	while (true)
+	{
+		attron(COLOR_PAIR(ECOLOR_MSG));
+		mvprintw(LINES - 1, 0, "%s » %s", prompt, before.items);
+		int input_y, input_x;
+		getyx(wind, input_y, input_x);
+		printw("%s", after.items);
+		clrtoeol();
+		move(input_y, input_x);
+		attroff(COLOR_PAIR(ECOLOR_MSG));
+		/* info(wind, "%s » %s%s", prompt, before.items, after.items); */
+		int c = getch();
+		switch (c)
+		{
+		case KEY_BACKSPACE:
+			if (before.len <= 1) break;
+			before.len--;
+			before.items[before.len - 1] = '\0';
+			break;
+		case control('a'):
+		{
+			before.len--;
+			for (int i = 0; i < after.len; i++)
+			{
+				da_append(before, after.items[i]);
+			}
+			free(after.items);
+			sv temp = before;
+			before = after;
+			after = temp;
+			da_construct(before, 15);
+			da_append(before, '\0');
+			break;
+		}
+		case control('e'):
+		{
+			before.len--;
+			for (int i = 0; i < after.len; i++)
+			{
+				da_append(before, after.items[i]);
+			}
+			free(after.items);
+			da_construct(after, 15);
+			da_append(after, '\0');
+			break;
+		}
+		case control('f'):
+		{
+			if (after.len <= 1) break;
+			char next = after.items[0];
+			before.items[before.len - 1] = next;
+			da_append(before, '\0');
+			for (int i = 1; i < after.len; i++)
+			{
+				after.items[i - 1] = after.items[i];
+			}
+			after.len--;
+			break;
+		}
+		case control('b'):
+		{
+			if (before.len <= 1) break;
+			char prev = before.items[before.len - 2];
+			for (int i = after.len - 1; i > 0; i--)
+			{
+				after.items[i] = after.items[i - 1];
+			}
+			after.items[0] = prev;
+			da_append(after, '\0');
+			before.items[before.len - 2] = '\0';
+			before.len--;
+			break;
+		}
+		case control('g'):
+		case control('c'):
+			free(before.items);
+			free(after.items);
+			move(y, x);
+			return NULL;
+		case '\n':
+			before.len--;
+			for (int i = 0; i < after.len; i++)
+			{
+				da_append(before, after.items[i]);
+			}
+			free(after.items);
+			move(y, x);
+			return before.items;
+		default:
+			before.items[before.len - 1] = c;
+			da_append(before, '\0');
+			break;
+		}
+	}
 }
 
 void draw_screen(WINDOW* wind, directory cwd)
@@ -113,6 +224,8 @@ void close_window()
 
 WINDOW* init_window()
 {
+	setlocale(LC_ALL, "");
+
 	WINDOW* wind = initscr();
 	start_color();
 	use_default_colors();

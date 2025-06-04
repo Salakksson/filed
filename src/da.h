@@ -29,7 +29,7 @@ do { \
 	(list).cap = sz ? sz : 10; \
 	(list).len = 0; \
 	(list).items = malloc(sizeof(*(list).items) * (list).cap); \
-	if(!(list).items) fatal(strerror(errno)); \
+	if(!(list).items) fatal("failed to malloc: %s", strerror(errno)); \
 } while(0)
 
 #define da_swap(list, type, a, b) \
