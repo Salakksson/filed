@@ -87,7 +87,6 @@ void delete_entries(WINDOW* wind, directory* cwd, entry* selected)
 		else
 			info(wind, "failed to delete '%s': %s", selected->name, strerror(errno));
 	}
-
 }
 
 int main(int argc, char** argv)
@@ -104,7 +103,7 @@ int main(int argc, char** argv)
 	directory cwd = {0};
 	change_dir(&cwd, conf.path);
 	draw_screen(wind, cwd);
-	char c;
+	int c;
 	while ((c = getch()))
 	{
 		move(LINES - 1, 0);
@@ -142,6 +141,7 @@ int main(int argc, char** argv)
 			change_dir(&cwd, ".");
 			break;
 		case 'g':
+		case KEY_RESIZE:
 			refresh_cwd(&cwd);
 			break;
 		case 'm':

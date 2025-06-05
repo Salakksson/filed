@@ -34,6 +34,7 @@ static int intlen(int n)
 void change_dir(directory* cwd, const char* path)
 {
 	path = strdup(path);
+
 	if (cwd->path)
 	{
 		for (int i = 0; i < cwd->entries.len; i++)
@@ -59,7 +60,8 @@ void change_dir(directory* cwd, const char* path)
 	chdir(cwd->path);
 	da_construct(cwd->entries, 10);
 
-	cwd->current = 1;
+	if (strcmp(path, "."))
+		cwd->current = 1;
 
 	cwd->longest_group = 1;
 	cwd->longest_owner = 1;

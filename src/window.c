@@ -78,6 +78,7 @@ char* nreadline(WINDOW* wind, const char* prompt)
 		int c = getch();
 		switch (c)
 		{
+		case KEY_RESIZE: break;
 		case KEY_BACKSPACE:
 			if (before.len <= 1) break;
 			before.len--;
