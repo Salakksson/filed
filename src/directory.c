@@ -225,8 +225,10 @@ bool remove_recursive(const char* path)
 		bool success = remove_recursive(fullpath);
 		if (!success)
 		{
-			fprintf(stderr, "failed to remove '%s': %s\n", fullpath, strerror(errno));
-			fprintf(stderr, "entry->d_name : '%s'\n", entry->d_name);
+			fprintf(stderr, "failed to remove '%s': %s\n",
+				fullpath, strerror(errno));
+			fprintf(stderr, "entry->d_name : '%s'\n",
+				entry->d_name);
 			closedir(dir);
 			free(fullpath);
 			return false;

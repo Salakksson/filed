@@ -1,4 +1,3 @@
-#include "da.h"
 #include "directory.h"
 #include "window.h"
 
@@ -71,7 +70,8 @@ void delete_entries(WINDOW* wind, directory* cwd, entry* selected)
 				success = false;
 			if (!success)
 			{
-				info(wind, "failed to delete '%s': %s", selected->name, strerror(errno));
+				info(wind, "failed to delete '%s': %s",
+				     selected->name, strerror(errno));
 				break;
 			}
 
@@ -85,7 +85,8 @@ void delete_entries(WINDOW* wind, directory* cwd, entry* selected)
 		if (success)
 			info(wind, "deleted '%s' successfully", selected->name);
 		else
-			info(wind, "failed to delete '%s': %s", selected->name, strerror(errno));
+			info(wind, "failed to delete '%s': %s",
+			     selected->name, strerror(errno));
 	}
 }
 
@@ -168,7 +169,8 @@ int main(int argc, char** argv)
 			char* path = nreadline(wind, "create path");
 			if (!path) break;
 			if (mkdir(path, 0755) != 0)
-				info(wind, "failed to create '%s': %s", path, strerror(errno));
+				info(wind, "failed to create '%s': %s",
+				     path, strerror(errno));
 			else
 				info(wind, "created directory '%s'", path);
 			free(path);
