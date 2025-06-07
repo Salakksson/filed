@@ -47,7 +47,9 @@ char confirm(WINDOW* wind, const char* fmt, ...)
 
 typedef DA(char) sv;
 
-char* nreadline(WINDOW* wind, const char* prompt)
+__attribute__((format(printf, 2, 3)))
+__attribute__((malloc))
+char* nreadline(WINDOW* wind, const char* fmt, ...)
 {
 	int y, x;
 	getyx(wind, y, x);
@@ -59,10 +61,15 @@ char* nreadline(WINDOW* wind, const char* prompt)
 	da_append(before, '\0');
 	da_append(after, '\0');
 
+	va_list args;
+	va_start(args, fmt);
+
 	while (true)
 	{
 		attron(COLOR_PAIR(ECOLOR_MSG));
-		mvprintw(LINES - 1, 0, "%s » ", prompt);
+		move(LINES - 1, 0);
+		vw_printw(wind, fmt, args);
+		printw(" » ");
 		attroff(COLOR_PAIR(ECOLOR_MSG));
 
 		printw("%s", before.items);
@@ -232,13 +239,13 @@ void draw_screen(WINDOW* wind, directory cwd)
 
 static struct termios original_termios;
 
-void close_window()
+void close_window(void)
 {
 	tcsetattr(STDIN_FILENO, TCSANOW, &original_termios);
 	endwin();
 }
 
-WINDOW* init_window()
+WINDOW* init_window(void)
 {
 	setlocale(LC_ALL, "");
 

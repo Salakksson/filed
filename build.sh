@@ -2,8 +2,8 @@
 
 set -e
 
-CC=gcc
-CCFLAGS=" -Wall -Wpedantic -Werror -fsanitize=address,undefined -O0 -g"
+CC=clang
+CCFLAGS=" -std=c11 -D_GNU_SOURCE -Wall -Wpedantic -Werror -fsanitize=address,undefined -O0 -g"
 LDFLAGS=" -lcurses -fsanitize=address,undefined"
 
 BUILD_DIR=".build"

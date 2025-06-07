@@ -10,7 +10,7 @@
 
 #include "da.h"
 
-#define KILOBYTE (off_t)1024
+#define KILOBYTE 1024.0f
 #define MEGABYTE (KILOBYTE*KILOBYTE)
 #define GIGABYTE (MEGABYTE*KILOBYTE)
 #define TERABYTE (GIGABYTE*KILOBYTE)

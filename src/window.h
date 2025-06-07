@@ -13,13 +13,15 @@ void info(WINDOW* wind, const char* fmt, ...);
 
 char confirm(WINDOW* wind, const char* fmt, ...);
 
-char* nreadline(WINDOW* wind, const char* prompt);
+__attribute__((format(printf, 2, 3)))
+__attribute__((malloc))
+char* nreadline(WINDOW* wind, const char* fmt, ...);
 
 void draw_screen(WINDOW* wind, directory cwd);
 
-void close_window();
+void close_window(void);
 
-WINDOW* init_window();
+WINDOW* init_window(void);
 
 
 

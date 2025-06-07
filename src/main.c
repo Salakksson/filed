@@ -1,6 +1,7 @@
 #include "directory.h"
 #include "window.h"
 
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <ctype.h>
@@ -10,27 +11,64 @@ typedef struct
 	char* path;
 } config;
 
-void exec_file(WINDOW* wind, directory* cwd, const char* path)
+__attribute__((format(printf, 1, 2)))
+__attribute__((malloc))
+char* stralloc(const char* fmt, ...)
+{
+	va_list args, copy;
+	va_start(args, fmt);
+	va_copy(copy, args);
+
+	size_t sz = vsnprintf(0, 0, fmt, args);
+	char* buf = malloc(sz + 1);
+	if (!buf) fatal("failed to alloc");
+	vsnprintf(buf, sz + 1, fmt, copy);
+	return buf;
+}
+
+__attribute__((malloc))
+char* get_command(const char* path)
+{
+	if (access(path, X_OK) == 0)
+	{
+		return stralloc("exec '%s' > /dev/null 2>&1 &", path);
+	}
+	char* ext = strrchr(path, '.');
+	if (!ext) return NULL;
+	if (
+		!strcmp(ext, ".mp4") ||
+		!strcmp(ext, ".mp3") ||
+		!strcmp(ext, ".wav") ||
+		!strcmp(ext, ".jpg") ||
+		!strcmp(ext, ".png") ||
+		!strcmp(ext, ".webm")
+	) return stralloc("mpv --loop '%s' > /dev/null 2>&1 &", path);
+	if (
+		!strcmp(ext, ".c")
+	) return stralloc("emacsclient -c '%s' > /dev/null 2>&1 &", path);
+	return NULL;
+}
+
+bool exec_file(WINDOW* wind, directory* cwd, const char* path)
 {
 	if (is_dir(path))
 	{
 		change_dir(cwd, path);
-		return;
+		return true;
 	}
 
-	pid_t pid = fork();
-	if (pid == -1)
+	char* command = get_command(path);
+	if (!command)
 	{
-		info(wind, "failed to fork: %s", strerror(errno));
-		return;
+		char* app = nreadline(wind, "open '%s' with", path);
+		if (!app) return true;
+		command = stralloc("%s '%s' > /dev/null 2>&1 &", app, path);
+		free(app);
 	}
-	if (pid == 0)
-	{
-		execlp("xdg-open", "xdg-open", path, (char*)NULL);
-		info(wind, "failed to xdg-open '%s': %s", strerror(errno));
-		return;
-	}
+	int status = system(command);
+	free(command);
 
+	return (status != -1) && WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
 void refresh_cwd(directory* cwd)
