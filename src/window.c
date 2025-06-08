@@ -178,14 +178,51 @@ char* nreadline(WINDOW* wind, const char* fmt, ...)
 	}
 }
 
+#define LONGEST_MARK sizeof("-")
+#define LONGEST_PERMS sizeof("drwxrwxrwx")
+#define LONGEST_FILESIZE 4
+
 void draw_screen(WINDOW* wind, directory cwd)
 {
 	attron(COLOR_PAIR(ECOLOR_HEAD));
 	mvprintw(0, 0, "%s:", cwd.path);
+	if (cwd.soft)
+	{
+		printw(" (");
+		if (cwd.soft) printw("soft");
+		printw(")");
+	}
 	attroff(COLOR_PAIR(ECOLOR_HEAD));
 
 	clrtoeol();
 	printw("\n");
+
+	int len_all =
+		LONGEST_MARK + 1 +
+		LONGEST_PERMS + 1 +
+		cwd.longest_links + 1 +
+		cwd.longest_owner + 1 +
+		cwd.longest_group + 1 +
+		LONGEST_FILESIZE + 1 +
+		cwd.longest_date + 1 +
+		cwd.longest_name;
+
+	// in soft mode remove entries in order of least significance
+	int len_rm_links = len_all;
+	int len_rm_group = len_rm_links - cwd.longest_links - 1;
+	int len_rm_owner = len_rm_group - cwd.longest_group - 1;
+	int len_rm_perms = len_rm_owner - cwd.longest_owner - 1;
+	int len_rm_fsize = len_rm_perms - LONGEST_PERMS - 1;
+	int len_rm_date = len_rm_fsize - LONGEST_FILESIZE - 1;
+
+	int screen_space = COLS;
+
+	bool draw_links = (len_rm_links <= screen_space) || !cwd.soft;
+	bool draw_group = (len_rm_group <= screen_space) || !cwd.soft;
+	bool draw_perms = (len_rm_perms <= screen_space) || !cwd.soft;
+	bool draw_owner = (len_rm_owner <= screen_space) || !cwd.soft;
+	bool draw_fsize = (len_rm_fsize <= screen_space) || !cwd.soft;
+	bool draw_date = (len_rm_date <= screen_space) || !cwd.soft;
 
 	for (int i = 0; i < LINES - RESERVED_LINES; i++)
 	{
@@ -204,24 +241,26 @@ void draw_screen(WINDOW* wind, directory cwd)
 			printw("  ");
 		attroff(COLOR_PAIR(ECOLOR_MARKED));
 
-		printw("%s ", e.perms);
-		printw("%*d ", cwd.longest_links, e.n_links);
-		printw("%s ", e.owner);
-		printw("%s ", e.group);
-		if (e.sz_unit == 'B')
+		if (draw_perms) printw("%s ", e.perms);
+		if (draw_links) printw("%*d ", cwd.longest_links, e.n_links);
+		if (draw_owner) printw("%s ", e.owner);
+		if (draw_group) printw("%s ", e.group);
+		if (draw_fsize)
 		{
-			printw("%4d ", (int)e.sz_amount);
-		}
-		else
-		{
-			if (e.sz_amount >= 10)
-				printw("%3d", (int)e.sz_amount);
+			if (e.sz_unit == 'B')
+			{
+				printw("%4d ", (int)e.sz_amount);
+			}
 			else
-				printw("%3.1f", e.sz_amount);
-			printw("%c ", e.sz_unit);
+			{
+				if (e.sz_amount >= 10)
+					printw("%3d", (int)e.sz_amount);
+				else
+					printw("%3.1f", e.sz_amount);
+				printw("%c ", e.sz_unit);
+			}
 		}
-		printw("%s ", e.date);
-
+		if (draw_date) printw("%s ", e.date);
 		if (i == cwd.current)
 			getyx(wind, cwd.y, cwd.x);
 

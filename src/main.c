@@ -179,6 +179,10 @@ int main(int argc, char** argv)
 			delete_entries(wind, &cwd, e);
 			change_dir(&cwd, ".");
 			break;
+		case 's':
+			cwd.soft = !cwd.soft;
+			refresh_cwd(&cwd);
+			break;
 		case 'g':
 		case KEY_RESIZE:
 			refresh_cwd(&cwd);

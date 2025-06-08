@@ -36,11 +36,12 @@ typedef struct
 	int longest_owner;
 	int longest_group;
 	int longest_date;
+	int longest_name;
 	int y, x;
 	int current;
 	int scroll;
+	bool soft;
 } directory;
-
 
 void change_dir(directory* cwd, const char* path);
 

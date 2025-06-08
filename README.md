@@ -22,7 +22,8 @@
 - `o`     → open any directory
 - `enter` → open selected directory
 - `+`     → create directory
-
+### Modes
+- `s`     → soft mode (remove entries to prevent wrapping)
 ### Minibuffer
 - `C-f`   → forward
 - `C-b`   → back

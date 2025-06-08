@@ -50,6 +50,10 @@ void change_dir(directory* cwd, const char* path)
 		free(cwd->entries.items);
 		free(cwd->path);
 	}
+	else
+	{
+		cwd->soft = true;
+	}
 	if (!strlen(path)) // if path is "" just free the memory
 	{
 		free((void*)path);
@@ -67,6 +71,7 @@ void change_dir(directory* cwd, const char* path)
 	cwd->longest_owner = 1;
 	cwd->longest_links = 1;
 	cwd->longest_date = 1;
+	cwd->longest_name = 1;
 
 	DIR* dir = opendir(cwd->path);
 	struct dirent* dir_entry;
@@ -152,12 +157,20 @@ void change_dir(directory* cwd, const char* path)
 
 		if (intlen(e.n_links) > cwd->longest_links)
 			cwd->longest_links = intlen(e.n_links);
+
 		if (strlen(e.owner) > cwd->longest_owner)
-			cwd->longest_group = strlen(e.owner);
+			cwd->longest_owner = strlen(e.owner);
+
 		if (strlen(e.group) > cwd->longest_group)
 			cwd->longest_group = strlen(e.group);
+
 		if (strlen(e.date) > cwd->longest_date)
 			cwd->longest_date = strlen(e.date);
+
+		int name_length = strlen(e.name);
+		if (e.link) name_length += strlen(" -> ") + strlen(e.link);
+		if (name_length > cwd->longest_name)
+			cwd->longest_name = name_length;
 
 		da_append(cwd->entries, e);
 	}
