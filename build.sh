@@ -14,10 +14,19 @@ mkdir -p $BUILD_DIR
 mkdir -p $BIN_DIR
 touch $DEPFILE
 
-if [ "$1" == "fresh" ] ;
-then
-	rm -fr $BIN_DIR/*
-fi
+RUN=false
+
+for arg in echo $@;
+do
+	if [ "$arg" == "fresh" ] ;
+	then
+		rm -fr $BIN_DIR/*
+	fi
+	if [ "$arg" == "run" ] ;
+	then
+		RUN=true
+	fi
+done
 
 TARGET=./filed
 
@@ -48,3 +57,8 @@ do
 done
 
 $CC $LDFLAGS $objects -o $TARGET
+
+if $RUN;
+then
+	$TARGET 2> error.txt
+fi
