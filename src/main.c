@@ -183,6 +183,18 @@ int main(int argc, char** argv)
 			cwd.soft = !cwd.soft;
 			refresh_cwd(&cwd);
 			break;
+		case 'r':
+		{
+			char* new_name = nreadline(wind, "rename '%s' to", e->name);
+			int success = rename(e->name, new_name);
+			if (success == 0)
+				info(wind, "successfully renamed");
+			else
+				info(wind, "failed to rename '%s' to '%s': %s",
+				     e->name, new_name, strerror(errno));
+			refresh_cwd(&cwd);
+			break;
+		}
 		case 'g':
 		case KEY_RESIZE:
 			refresh_cwd(&cwd);

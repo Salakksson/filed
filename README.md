@@ -7,8 +7,6 @@
 ## Features
 - `ls -lah` style output
 - navigate filesystem
-- create directories
-- delete entries
 - minibuffer with subset of emacs bindings
 
 ## Usage
@@ -17,13 +15,14 @@
 - `n`     → move down
 - `m`     → mark/unmark file
 - `d`     → delete marked/selected file(s)
+- `r`     → rename selected file
 - `C-c`   → exit
 - `g`     → refresh
 - `o`     → open any directory
 - `enter` → open selected directory
 - `+`     → create directory
 ### Modes
-- `s`     → soft mode (remove entries to prevent wrapping)
+- `s`     → soft mode (remove info to prevent wrapping)
 ### Minibuffer
 - `C-f`   → forward
 - `C-b`   → back
