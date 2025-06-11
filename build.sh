@@ -15,6 +15,7 @@ mkdir -p $BIN_DIR
 touch $DEPFILE
 
 RUN=false
+INSTALL=false
 
 for arg in echo $@;
 do
@@ -25,6 +26,10 @@ do
 	if [ "$arg" == "run" ] ;
 	then
 		RUN=true
+	fi
+	if [ "$arg" == "install" ] ;
+	then
+		INSTALL=true
 	fi
 done
 
@@ -57,6 +62,12 @@ do
 done
 
 $CC $LDFLAGS $objects -o $TARGET
+
+if $INSTALL;
+then
+	echo sudo cp $TARGET /usr/local/bin
+	sudo cp $TARGET /usr/local/bin
+fi
 
 if $RUN;
 then
