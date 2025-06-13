@@ -99,6 +99,18 @@ int main(int argc, char** argv)
 		case KEY_BACKSPACE:
 			change_dir(&cwd, "..");
 			break;
+		case '~':
+		{
+			const char* home = getenv("HOME");
+			if (!home)
+			{
+				info(wind, "$HOME is not set");
+				break;
+			}
+			change_dir(&cwd, home);
+			break;
+		}
+
 		case '+':
 		{
 			char* path = nreadline(wind, "create path");
