@@ -96,6 +96,9 @@ int main(int argc, char** argv)
 			free(expanded);
 			break;
 		}
+		case KEY_BACKSPACE:
+			change_dir(&cwd, "..");
+			break;
 		case '+':
 		{
 			char* path = nreadline(wind, "create path");
