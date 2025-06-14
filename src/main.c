@@ -110,7 +110,6 @@ int main(int argc, char** argv)
 			change_dir(&cwd, home);
 			break;
 		}
-
 		case '+':
 		{
 			char* path = nreadline(wind, "create path");
