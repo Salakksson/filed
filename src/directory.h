@@ -32,11 +32,11 @@ typedef struct
 {
 	char* path;
 	DA(entry) entries;
-	int longest_links;
-	int longest_owner;
-	int longest_group;
-	int longest_date;
-	int longest_name;
+	unsigned longest_links;
+	unsigned longest_owner;
+	unsigned longest_group;
+	unsigned longest_date;
+	unsigned longest_name;
 	int y, x;
 	int current;
 	int scroll;

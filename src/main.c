@@ -10,7 +10,7 @@ void refresh_cwd(directory* cwd)
 int main(int argc, char** argv)
 {
 	char* start_path = ".";
-	for (int i = 1; argv[i]; i++)
+	for (int i = 1; i < argc; i++)
 	{
 		start_path = argv[i];
 	}
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 			exec_file(wind, &cwd, e->name);
 			break;
 		case 'd':
-			delete_entries(wind, &cwd, e);
+			delete_entries(wind, &cwd);
 			change_dir(&cwd, ".");
 			break;
 		case 's':

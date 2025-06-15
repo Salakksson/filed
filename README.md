@@ -24,7 +24,7 @@
 - `~`          → go to home directory
 - `backspace` → go to parent directory
 ### Modes
-- `s`          → soft mode (remove info to prevent wrapping)
+- `s`          → soft mode - remove info to prevent wrapping
 ### Minibuffer
 - `C-f`        → forward
 - `C-b`        → back

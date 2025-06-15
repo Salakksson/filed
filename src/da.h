@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <stdarg.h>
 
-inline void msg(const char* fmt, ...)
+static inline void msg(const char* fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);

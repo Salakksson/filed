@@ -3,8 +3,13 @@
 set -e
 
 CC=clang
-CCFLAGS=" -std=c11 -D_GNU_SOURCE -Wall -Wpedantic -Werror -fsanitize=address,undefined -O0 -g"
-LDFLAGS=" -lcurses -fsanitize=address,undefined"
+CCFLAGS=""
+CCFLAGS+=" -std=c11 -D_GNU_SOURCE"
+CCFLAGS+=" -Wall -Wpedantic -Wextra -Werror -Wshadow"
+CCFLAGS+=" -fsanitize=address,undefined -fno-omit-frame-pointer"
+CCFLAGS+=" -O0 -g"
+
+LDFLAGS="-lcurses -fsanitize=address,undefined "
 
 BUILD_DIR=".build"
 BIN_DIR="$BUILD_DIR/bin"
@@ -19,15 +24,15 @@ INSTALL=false
 
 for arg in echo $@;
 do
-	if [ "$arg" == "fresh" ] ;
+	if [ "$arg" = "fresh" ] ;
 	then
 		rm -fr $BIN_DIR/*
 	fi
-	if [ "$arg" == "run" ] ;
+	if [ "$arg" = "run" ] ;
 	then
 		RUN=true
 	fi
-	if [ "$arg" == "install" ] ;
+	if [ "$arg" = "install" ] ;
 	then
 		INSTALL=true
 	fi
@@ -57,8 +62,8 @@ do
 		continue
 	fi
 
-	echo $CC -c $CCFLAGS $file -o $out
-	$CC -c $CCFLAGS $file -o $out
+	echo $CC -c $file -o $out $CCFLAGS
+	$CC -c $file -o $out $CCFLAGS
 done
 
 $CC $LDFLAGS $objects -o $TARGET

@@ -15,7 +15,7 @@
 #define GIGABYTE (MEGABYTE*KILOBYTE)
 #define TERABYTE (GIGABYTE*KILOBYTE)
 
-static int intlen(int n)
+static unsigned intlen(int n)
 {
 	int digits = 0;
 	if (n < 0)
@@ -167,7 +167,7 @@ void change_dir(directory* cwd, const char* path)
 		if (strlen(e.date) > cwd->longest_date)
 			cwd->longest_date = strlen(e.date);
 
-		int name_length = strlen(e.name);
+		unsigned name_length = strlen(e.name);
 		if (e.link) name_length += strlen(" -> ") + strlen(e.link);
 		if (name_length > cwd->longest_name)
 			cwd->longest_name = name_length;
@@ -218,7 +218,6 @@ bool is_dir_empty(const char* path)
 
 bool remove_recursive(const char* path)
 {
-	fprintf(stderr, "attempting remove_recursive('%s')\n", path);
 	if (!is_dir(path)) return remove(path) == 0;
 
 	if (is_dir_empty(path)) return remove(path) == 0;
