@@ -6,8 +6,17 @@
 
 #include <string.h>
 #include <errno.h>
+#include <stdarg.h>
 
-#define fatal(...) do {fprintf(stderr, __VA_ARGS__); exit(0); } while (0)
+inline void msg(const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	vfprintf(stderr, fmt, args);
+	va_end(args);
+}
+
+#define fatal(...) do { msg (__VA_ARGS__); exit(0); } while (0)
 
 #define DA(contents) struct { \
 	contents* items; \

@@ -277,11 +277,24 @@ void draw_screen(WINDOW* wind, directory cwd)
 }
 
 static struct termios original_termios;
+static int original_stderr;
+static int log_fd;
 
 void close_window(void)
 {
 	tcsetattr(STDIN_FILENO, TCSANOW, &original_termios);
 	endwin();
+	dup2(original_stderr, STDERR_FILENO);
+	close(original_stderr);
+
+	lseek(log_fd, 0, SEEK_SET);
+	char buf[512];
+	ssize_t n;
+	while ((n = read(log_fd, buf, sizeof(buf))) > 0)
+	{
+		write(STDERR_FILENO, buf, n);
+	}
+	close(log_fd);
 }
 
 WINDOW* init_window(void)
@@ -310,6 +323,15 @@ WINDOW* init_window(void)
 	{
 		first_init = false;
 		tcgetattr(STDIN_FILENO, &original_termios);
+
+		original_stderr = dup(STDERR_FILENO);
+		char tempfile[] = "/tmp/filed.XXXXXX";
+		log_fd = mkstemp(tempfile);
+		if (log_fd == -1)
+			fatal("failed to make tempfile: %s", strerror(errno));
+		unlink(tempfile);
+		dup2(log_fd, STDERR_FILENO);
+
 		atexit(close_window);
 	}
 
@@ -319,4 +341,10 @@ WINDOW* init_window(void)
 	tcsetattr(STDIN_FILENO, TCSANOW, &t);
 
 	return wind;
+}
+
+__attribute__((weak))
+void __asan_on_error(void)
+{
+	close_window();
 }

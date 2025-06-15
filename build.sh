@@ -71,5 +71,5 @@ fi
 
 if $RUN;
 then
-	$TARGET 2> error.txt
+	$TARGET
 fi
