@@ -10,7 +10,7 @@ typedef struct
 	bool marked;
 } selected_entries;
 
-selected_entries get_selected(directory* dir);
+selected_entries get_selected(directory* cwd);
 
 bool exec_file(WINDOW* wind, directory* cwd, const char* path);
 

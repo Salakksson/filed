@@ -7,21 +7,21 @@
 
 #define READ_SIZE 256
 
-selected_entries get_selected(directory* dir)
+selected_entries get_selected(directory* cwd)
 {
 	selected_entries se = {0};
 	da_construct(se.entries, 5);
 
-	for (int i = 0; i < dir->entries.len; i++)
+	for (int i = 0; i < cwd->entries.len; i++)
 	{
-		entry e = dir->entries.items[i];
+		entry e = cwd->entries.items[i];
 		if (!e.marked) continue;
 		se.marked = true;
 		da_append(se.entries, e.name);
 	}
 	if (!se.marked)
 	{
-		entry e = dir->entries.items[dir->current + dir->scroll];
+		entry e = cwd->entries.items[cwd->current + cwd->scroll];
 		da_append(se.entries, e.name);
 	}
 	return se;
@@ -87,8 +87,8 @@ static bool copy_file_dir(const char* src, const char* dst)
 
 bool copy_file(const char* src, const char* dst)
 {
-	if (file_exists(dst)) return false;
 	if (is_dir(dst)) return copy_file_dir(src, dst);
+	if (file_exists(dst)) return false;
 
 	FILE* fp_src = fopen(src, "r");
 	FILE* fp_dst = fopen(dst, "w");
