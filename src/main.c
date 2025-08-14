@@ -28,6 +28,7 @@ int main(int argc, char** argv)
 		entry* e = &cwd.entries.items[cwd.current + cwd.scroll];
 		switch (c)
 		{
+		case control('p'):
 		case 'p':
 			if (cwd.current + cwd.scroll <= 0)
 			{
@@ -39,6 +40,7 @@ int main(int argc, char** argv)
 			}
 			else cwd.current--;
 			break;
+		case control('n'):
 		case 'n':
 			if (cwd.current + cwd.scroll + 1 >= cwd.entries.len)
 			{
@@ -61,6 +63,40 @@ int main(int argc, char** argv)
 			cwd.soft = !cwd.soft;
 			refresh_cwd(&cwd);
 			break;
+		case 'x':
+		{
+			char* dst = nreadline(wind, "move to");
+			selected_entries se = get_selected(&cwd);
+			for (int i = 0; i < se.entries.len; i++)
+			{
+				const char* src = se.entries.items[i];
+				bool success = move_file(src, dst);
+				if (success) continue;
+				info(wind, "failed to move '%s' to '%s': %s",
+				     src, dst, strerror(errno));
+			}
+			free(se.entries.items);
+			refresh_cwd(&cwd);
+			info(wind, "move successful");
+			break;
+		}
+		case 'c':
+		{
+			char* dst = nreadline(wind, "copy to");
+			selected_entries se = get_selected(&cwd);
+			for (int i = 0; i < se.entries.len; i++)
+			{
+				const char* src = se.entries.items[i];
+				bool success = copy_file(src, dst);
+				if (success) continue;
+				info(wind, "failed to copy '%s' to '%s': %s",
+				     src, dst, strerror(errno));
+			}
+			free(se.entries.items);
+			refresh_cwd(&cwd);
+			info(wind, "copy successful");
+			break;
+		}
 		case 'r':
 		{
 			char* new_name = nreadline(wind, "rename '%s' to", e->name);

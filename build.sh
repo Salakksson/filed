@@ -20,7 +20,7 @@ mkdir -p $BIN_DIR
 touch $DEPFILE
 
 RUN=false
-INSTALL=false
+INSTALL=true
 
 for arg in echo $@;
 do
