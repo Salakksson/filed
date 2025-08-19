@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -e
 
@@ -9,7 +9,7 @@ CCFLAGS+=" -Wall -Wpedantic -Wextra -Werror -Wshadow"
 CCFLAGS+=" -fsanitize=address,undefined -fno-omit-frame-pointer"
 CCFLAGS+=" -O0 -g"
 
-LDFLAGS="-lcurses -fsanitize=address,undefined "
+LDFLAGS="-lcurses -fsanitize=address,undefined"
 
 BUILD_DIR=".build"
 BIN_DIR="$BUILD_DIR/bin"
@@ -22,20 +22,19 @@ touch $DEPFILE
 RUN=false
 INSTALL=true
 
-for arg in echo $@;
+for arg in "$@"
 do
-	if [ "$arg" = "fresh" ] ;
-	then
-		rm -fr $BIN_DIR/*
-	fi
-	if [ "$arg" = "run" ] ;
-	then
-		RUN=true
-	fi
-	if [ "$arg" = "install" ] ;
-	then
-		INSTALL=true
-	fi
+	case "$arg" in
+		"fresh")
+			rm -fr $BIN_DIR/*
+			;;
+		"run")
+			RUN=true
+			;;
+		"install")
+			INSTALL=true
+			;;
+	esac
 done
 
 TARGET=./filed
@@ -47,34 +46,29 @@ do
 	objects="$objects $out"
 
 	skip=true
-
 	for dep in $(.build/fastdep.sh $file -o $out -d $DEPFILE)
 	do
-		if [ $file -nt $out ];
-		then
-			skip=false;
+		if [ $file -nt $out ]; then
+			skip=false
 		fi
 	done
 
-	if $skip;
-	then
-		echo × skipping $file → $out
+	if $skip; then
+		echo "× skipping $file → $out"
 		continue
 	fi
 
-	echo $CC -c $file -o $out $CCFLAGS
+	echo "$CC -c $file -o $out $CCFLAGS"
 	$CC -c $file -o $out $CCFLAGS
 done
 
 $CC $LDFLAGS $objects -o $TARGET
 
-if $INSTALL;
-then
-	echo sudo cp $TARGET /usr/local/bin
+if $INSTALL; then
+	echo "sudo cp $TARGET /usr/local/bin"
 	sudo cp $TARGET /usr/local/bin
 fi
 
-if $RUN;
-then
+if $RUN; then
 	$TARGET
 fi

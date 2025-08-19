@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 INPUT_FILE=""
 INPUT_OBJECT=""
